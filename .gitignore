@@ -1,0 +1,7 @@
+.env
+project2_env
+requirements.in
+requirements-dev.in
+__pycache__
+figures
+.ipynb_checkpoints/
