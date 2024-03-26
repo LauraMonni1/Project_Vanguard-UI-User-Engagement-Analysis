@@ -178,6 +178,8 @@ def completion_rate(df):
 
     """
     Function to calculate the completion rate of clients visiting the website.
+    It returns the average completion rate for the specified dataframe 
+    and a pandas series with completion rates for each client.
     
     Parameters:
     df (DataFrame): the dataframe containing the columns needed
@@ -185,13 +187,12 @@ def completion_rate(df):
 
     """
     
-    confirms = df[ df["process_step"] == "confirm"]
-    users_confirm = confirms["client_id"].nunique()
-    tot_users = df["client_id"].nunique()
+    confirm_count =df[df["process_step"] == "confirm"].groupby("client_id").size()   
+    total_users = df.groupby("client_id").size()
+    completion_rate = (confirm_count / total_users * 100).round(1).dropna()
+    average_completion_rate = completion_rate.mean().round(2)
 
-    completion_rate = round((users_confirm/tot_users)*100, 1)
-
-    return completion_rate
+    return average_completion_rate, completion_rate
 
 def tukeys_test_outliers(data):
 
@@ -216,7 +217,14 @@ def time_steps(df):
     """
     The function calculates the time spent by clients in the different steps of the process.
     It prints out the results for each step.
-    The function handles duplicates (two or more consecutive times the client was in the same step) and it drops outliers.
+    
+    It returns three elements:
+    1) the average time spent in each steps by all clients in teh dataframe  
+    2) the total average time spent by all clients to complete all steps of the process
+    3) a new dataframe with the average time spent by each client for each step
+
+    The function handles duplicates (two or more consecutive times the client was in the same step) 
+    by considering only the last and it drops outliers.
     
     Parameter:
     df (dataframe)
@@ -224,18 +232,21 @@ def time_steps(df):
     """
 
     df["date_time"] = pd.to_datetime(df["date_time"])
-    df_sort_date = df.sort_values(by = ["client_id", "date_time"])
+    df_sort_date = df.sort_values(by = ["client_id", "visit_id", "date_time"]).copy()
     
     start_step1 = df_sort_date[ df_sort_date["process_step"].isin(["start","step_1"])]
     step1_step2 = df_sort_date[ df_sort_date["process_step"].isin(["step_1","step_2"])]
     step2_step3 = df_sort_date[ df_sort_date["process_step"].isin(["step_2","step_3"])]
     step3_confirm = df_sort_date[ df_sort_date["process_step"].isin(["step_3","confirm"])]
+
+    step_names = ["Start-Step1", "Step1-Step2", "Step2-Step3", "Step3-Confirm"]
     
-    time_spent = []
-    
-    for step_df in [start_step1, step1_step2, step2_step3, step3_confirm]:
-        
-        consecutive_duplicates = step_df.duplicated(subset=["client_id", "process_step"], keep = "first")
+    time_spent_avg = []
+    time_spent_client = {}
+
+    for step_df, step_name in zip([start_step1, step1_step2, step2_step3, step3_confirm], step_names):
+
+        consecutive_duplicates = step_df.duplicated(subset=["client_id", "process_step"], keep = "last")
         step_df = step_df[~consecutive_duplicates]
 
         time_diff = step_df.groupby("client_id")["date_time"].diff().dt.total_seconds()
@@ -245,16 +256,25 @@ def time_steps(df):
 
         time_diff_no_outliers = time_diff.iloc[~time_diff.index.isin(outliers.index)]
         average_time = time_diff_no_outliers.mean()
-        time_spent.append(average_time)
+        time_spent_avg.append(average_time)
+
+        time_spent_client[step_name] = time_diff_no_outliers.groupby(step_df["client_id"]).mean()
     
+
+    df_time_client = pd.DataFrame(time_spent_client)
+    df_time_client.dropna(inplace=True)
+
+    tot_time = np.mean(time_spent_avg)
+
+    print(f"""The average activity duration of clients for each step is:
+    Between Start and Step_1: {time_spent_avg[0]: .2f} seconds
+    Between Step_1 and Step_2: {time_spent_avg[1]: .2f} seconds
+    Between Step_2 and Step_3: {time_spent_avg[2]: .2f} seconds
+    Between Step_3 and Confirm: {time_spent_avg[3]: .2f} seconds
     
-    print(f"""The average activity duration of clients is:
-    Between Start and Step_1: {time_spent[0]: .2f} seconds
-    Between Step_1 and Step2: {time_spent[1]: .2f} seconds
-    Between Step_2 and Step3: {time_spent[2]: .2f} seconds
-    Between Step_3 and Confirm: {time_spent[3]: .2f} seconds""")
+    The total average duration to complete the process is: {tot_time: .2f} seconds""")
     
-    return 
+    return time_spent_avg, tot_time, df_time_client
 
 
 def sequence_individual_errors(df):
