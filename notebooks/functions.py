@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def format_gender(gender):
     if gender == "M":
@@ -60,15 +62,6 @@ def centrality_dispersion(df, column):
     Variance: {variance}
     Standard deviation: {std_dev}""")
 
-    result = {
-        "Mean": mean,
-        "Median": median,
-        "Mode": mode,
-        "Variance": variance,
-        "Standard Deviation": std_dev
-    }
-
-    return result
 
 def replace_nan(value):
 
@@ -103,8 +96,7 @@ def categ_age(age):
     Parameter: age
     To be used with .map() function to replace values in the column "age" or to create a new column of age categories.
     """
-
-    if age.isdigit(float):
+    if isinstance(age, float):
         if 0 <= age <= 15:
             return "Kid/Teenager"
         elif 16 <= age <= 20:
@@ -117,6 +109,8 @@ def categ_age(age):
             return "Senior"
         elif 76 <= age <= 100:
             return "Elderly"
+    else:
+        return "Unknown"
         
 def categ_hour(hour):
     """ 
@@ -284,7 +278,7 @@ def sequence_individual_errors(df):
     Errors are considered every time a client did not follow the order of 
     the steps specified by the list in the function (start, step_1, step_2, step_3, confirm).
     
-    The function finally prints the result (no errors or the error rate in percentage) for every client.
+    The function returns a dataframe including the error rate in percentage for every client.
 
     Parameter: df (dataframe)
     The dataframe columns that the function refers to are: "date_time", "process_step", "client_id"
@@ -303,13 +297,10 @@ def sequence_individual_errors(df):
     df_errors = df_sort_date.loc[errors] # errors is a boolean mask that allows to select only the rows of the sorted df where there are the errors specified in the mask 
    
     error_rate = ((df_errors.groupby("client_id").size() / df_sort_date.groupby("client_id").size())*100).fillna(0)
-    
-    for client, error in error_rate.items():
-        
-        if error <= 0:
-            print(f"No errors in the activity of the client with id: '{client}'")
-        else:
-            print(f"The error rate for client with id '{client}' is: {error: .2f}%")
+
+    df_error_rate = pd.DataFrame(error_rate, columns=["Error Rate (%)"])
+
+    return df_error_rate
 
 
 def sequence_total_errors(df):
