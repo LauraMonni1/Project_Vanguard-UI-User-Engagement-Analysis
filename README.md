@@ -1,98 +1,99 @@
-## Vanguard Data Analysis Project
+# 📊 Vanguard A/B Testing – UI & User Engagement Analysis
 
-This project contains analysis and visualizations of Vanguard data on the enhancement of User Experience through the implementation of a new modern User Interface (UI) and timely in-context prompts in the company's app.
+This project analyzes client behavior and engagement in response to a **UI redesign and in-context prompts** implemented in Vanguard’s app. The goal is to determine whether these UX improvements result in **higher completion rates** and **better user flow**.
 
-The main goal of the analysis was to evaluate if the new features effectively encourage more clients to complete the process.
+## Objective
 
-- **Data Sources**
+Evaluate the impact of a new **modern UI** and **in-context prompts** on user behavior across different customer segments. The project uses A/B testing data to answer:   *Do the changes improve user engagement and completion of the process?*
 
-Data collected from 3/15/2017 to 6/20/2017.
-Three datasets:
+---
+## Datasets Overview
 
-  1. Clients’ demographic data 
-       (70.609 clients, 9 info categories)
+Data collected from **March 15, 2017 to June 20, 2017**. Three datasets were used:
 
-  2. Clients’ online interactions (initial page, three steps, confirmation page)
-      (755.405 interactions, 5 info categories)
+| Dataset                | Description                                                                 |
+|------------------------|-----------------------------------------------------------------------------|
+| `clients.csv`          | Demographics (70,609 clients, 9 variables)                                  |
+| `interactions.csv`     | App navigation logs (755,405 records, 5 features)                           |
+| `groups.csv`           | A/B group assignment (Control: 23,532 | Test: 26,968 | Not included: 20,109)|
 
-  3. Clients’ experiment groups inclusion (Control, Test, or Not Included)
-     (23.532 Controls, 26.968 Tests, 20.109 clients Not Included)
+---
+## Variables Summary
 
-- **Insights and Analysis**
+### Demographic Features
+- **Categorical**: Gender, number of accounts, # of calls, # of logons (last 6 months)
+- **Numerical**: Age, tenure (years & months), account balance
+- **ID**: `client_id`
 
-An initial exploratory analysis was performed on the datasets individually (Code file name "EDA-data_clearing"), together with a slight formatting of data.
+### Interaction Log Features
+- User steps: `start`, `step_1`, `step_2`, `step_3`, `confirm`
+- Timestamped user actions per `client_id`
 
- **Demographic dataset**:
+---
 
- - 4 categorical variables (gender, number of accounts, calls in the last 6 months, and logons in the last 6 months)
+## Key Metrics
 
- - 4 numerical variables (tenure_years, tenure_months, clients age, and balance)
+Three performance indicators were defined:
 
- - 1 client_id
+1. **Completion Rate**  
+   → Proportion of users reaching the final ‘confirm’ step
 
-Categorical variables info:
+2. **Time on Each Step**  
+   → Average time spent on each of the four steps
 
- - Gender of clients quite uniformly distributed (F, M, and U = unspecified)
- - The majority of clients have 2 or 3 accounts
- - The majority of clients have done 6 calls in the last 6 months
- - The majority of clients have done 9 logons in the last 6 months, but many have also done between 3 and 7 logons
-- No correlation between gender and number of accounts
+3. **Error Rate**  
+   → Frequency of users moving **backward** in the step sequence (e.g. step 3 → step 2)
 
-Numerical variables info:
+Metric calculations are implemented in `Performance_metrics.ipynb`.
 
- - The majority of clients have the accounts since 1 to 15 years, with a mean of 12 years ± 6 (std).
- - The mean age of the clients is 46 years ± 12 (std)
- - The balance of the accounts is very variable, with a mean of 147,445 but a very high standard deviation of 301,508
+---
 
-**Clients experiment groups**:
+## Analysis Pipeline
 
-Clients subdivided in two groups having similar sample size:
+1. **Exploratory Data Analysis (EDA)**  
+   - Individual dataset analysis (demographics, interactions, groups)
+   - Initial plots and summary statistics  
+   *(see `EDA_data_cleaning.ipynb`)*
 
-Control --> 23532
-Test --> 26968
-Clients are identified by the unique client_id, regardless of how many accounts they have.
+2. **Distribution & Statistical Tests**  
+   - Histograms, Kolmogorov-Smirnov for normality  
+   - All metrics were non-normal → non-parametric tests used:
+     - **Mann-Whitney U test** → Compare control vs test (e.g., completion rate)
+     - **Friedman test** + **posthoc Tukey** → Compare times across steps
 
-**Clients digital footprint**:
+3. **Visualization**  
+   - Dashboard built in Tableau Public
 
- - The activity of all clients is monitored.
- - Each client_id has different indexes relative to the activity (time and steps)
- - The activity is monitored via "start", 3 steps and confirm
- - Not all clients performed the activity uniformly, some go back and forth between steps before reaching the confirm step 
+---
+
+## Key Insights
+
+- Test group showed a **higher completion rate** compared to control.
+- Certain steps had **longer dwell time** in the control group, suggesting UI confusion.
+- Higher **backward navigation** in control users flagged usability bottlenecks.
+
+---
+
+## Presentations
+
+- **🔗 Tableau Dashboard:**  
+  [Vanguard A/B Test Results – Dashboard](https://public.tableau.com/app/profile/laura.monni/viz/IronHack_Project2_vanguard-ab-test/Dashboard1?publish=yes)
+
+- **🎞️ 6-Minute Slide Presentation (Canva):**  
+  [Canva Slide Deck](https://www.canva.com/design/DAGA0BoS3xo/4ThKDWC4JL2uMBc7U8MOdA/edit)
+
+---
+
+## Tech Stack
+
+- **Languages**: Python (pandas, NumPy, matplotlib, seaborn, scipy.stats)
+- **Statistical Testing**: Kolmogorov-Smirnov, Mann-Whitney U, Friedman test
+- **Visualization**: Tableau Public, matplotlib, seaborn
+- **Tools**: Jupyter Notebooks
 
 
- - **Performance Metrics**
 
- Three metrics were defined to evaluate clients' engagement:
 
- 1) Completion Rate: The proportion of users who reach the final ‘confirm’ step.
-
- 2) Time Spent on Each Step: The average duration users spend on each step.
-
- 3) Error Rates: If there’s a step where users go back to a previous step, it may indicate confusion or an error. You should consider moving from a later step to an earlier one as an error.
-
- The code relative to the definition of the metrics is the file called "Performance_metrics"
-
- - **Statistical analysis** 
-
- All data were first subjected to distribution analysis, therefore an histogram was used to check for the distribution shape and then Kolmogorov-Smirnof test was employed to check for normality distribution. 
- All data were not-normally distributed, even after data transformation with either log, square root or Box-Cox transformations. 
- Thus, non-parametric tests were used to compare data from control and test groups:
-
-  - Mann-Whitney U test (equivalent to parametric t-test) --> the test ranks all values from low to high and compares the mean of the ranks. This test was employed to compare two independent samples (such as completion rate of control and test groups)
-
-  - Fridman test (equivalent to one-way ANOVA) with posthoc Tuckey's test for multiple comparisons of time spent between the 4 steps.
-
-  - **Tableau visualizations**
-
-  All plots depicting the results of the analysis can be found in the Tableau public repository: 
-
-  https://public.tableau.com/app/profile/laura.monni/viz/IronHack_Project2_vanguard-ab-test/Dashboard1?publish=yes
-
-  - **Slides presentation**
-
-  The slides of a 6 minutes presentation of the main results are public and can be found at:
-
-  https://www.canva.com/design/DAGA0BoS3xo/4ThKDWC4JL2uMBc7U8MOdA/edit
 
 
 
